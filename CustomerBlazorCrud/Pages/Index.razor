@@ -1,0 +1,69 @@
+﻿@page "/"
+@inject CustomerBlazorCrud.Services.ICustomerService customerService
+@inject IJSRuntime JsRuntime
+@using CustomerBlazorCrud.Models
+
+<h1>CRUD Clientes</h1>
+
+Welcome to your new app.
+
+
+<div class="alert alert-secondary mt-4" role="alert">
+    <span class="oi oi-pencil mr-2" aria-hidden="true"></span>
+    <strong>CRUD de CLIENTES para administrar cadastro, atualização e remoção deles.</strong>
+</div>
+
+<p>
+    <a href="/addcustomer">Novo</a>
+</p>
+
+@if (customers == null)
+{
+    <p><em>Carregando...</em></p>
+}
+else
+{
+    <table class='table'>
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Email</th>
+                <th>Nome</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var customer in customers)
+            {
+                <tr>
+                    <td>@customer.Id</td>
+                    <td>@customer.Email</td>
+                    <td>@customer.Name</td>
+                    <td>
+                        <a href='/editcustomer/@customer.Id'>Editar</a>  |
+                        <a href='#' @onclick="async () => await DeleteCustomer(customer.Id)">Deletar</a>
+                    </td>
+                </tr>
+
+            }
+        </tbody>
+    </table>
+}
+
+@code{
+    List<Customer> customers;
+
+    async Task DeleteCustomer(Guid id)
+    {
+        bool confirmed = await JsRuntime.InvokeAsync<bool>("confirm", "Tem certeza que deseja deletar?"); // Confirm
+        if (confirmed is false)
+            return;
+        var customerToRemove = customers.FirstOrDefault(c => c.Id.Equals(id));
+        customers.Remove(customerToRemove);
+        await customerService.SaveCustomers(customers);
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        customers = await customerService.GetCustomers();
+    }
+}
